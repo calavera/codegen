@@ -1722,7 +1722,13 @@ impl Docs {
 
     fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
         for line in self.docs.lines() {
-            write!(fmt, "/// {}\n", line)?;
+            if line == "" {
+                // Don't leave trailing whitespace.
+                write!(fmt, "///\n")?;
+            } else {
+                write!(fmt, "/// {}\n", line)?;
+
+            }
         }
 
         Ok(())
