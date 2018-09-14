@@ -154,7 +154,7 @@ pub struct Field {
     vis: Option<String>,
 
     /// Field documentation
-    documentation: String,
+    docs: Option<Docs>,
 
     /// Field annotation
     annotation: Vec<String>,
@@ -1180,7 +1180,7 @@ impl Field {
             name: name.into(),
             ty: ty.into(),
             vis: None,
-            documentation: String::new(),
+            docs: None,
             annotation: Vec::new(),
         }
     }
@@ -1192,8 +1192,8 @@ impl Field {
     }
 
     /// Set field's documentation.
-    pub fn doc(&mut self, documentation: &str) -> &mut Self {
-        self.documentation = documentation.into();
+    pub fn doc(&mut self, docs: &str) -> &mut Self {
+        self.docs = Some(Docs::new(docs));
         self
     }
 
@@ -1235,7 +1235,7 @@ impl Fields {
             name: name.to_string(),
             ty: ty.into(),
             vis: None,
-            documentation: String::new(),
+            docs: None,
             annotation: Vec::new(),
         })
     }
@@ -1264,8 +1264,8 @@ impl Fields {
 
                 fmt.block(|fmt| {
                     for f in fields {
-                        if !f.documentation.is_empty() {
-                            write!(fmt, "/// {}\n", f.documentation)?;
+                        if let Some(ref docs) = f.docs {
+                            docs.fmt(fmt)?;
                         }
                         if !f.annotation.is_empty() {
                             for ann in &f.annotation {
@@ -1357,7 +1357,7 @@ impl Impl {
             name: name.to_string(),
             ty: ty.into(),
             vis: None,
-            documentation: String::new(),
+            docs: None,
             annotation: Vec::new(),
         });
 
@@ -1518,7 +1518,7 @@ impl Function {
             // While a `Field` is used here, both `documentation`
             // and `annotation` does not make sense for function arguments.
             // Simply use empty strings.
-            documentation: String::new(),
+            docs: None,
             annotation: Vec::new(),
         });
 
