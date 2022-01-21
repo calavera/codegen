@@ -21,7 +21,7 @@
 //! println!("{}", scope.to_string());
 //! ```
 
-#![deny(warnings, missing_debug_implementations, missing_docs)]
+#![deny(missing_debug_implementations, missing_docs)]
 
 extern crate ordermap;
 
@@ -124,6 +124,7 @@ struct TypeDef {
     docs: Option<Docs>,
     derive: Vec<String>,
     bounds: Vec<Bound>,
+    attributes: Vec<String>,
 }
 
 /// Defines an enum variant.
@@ -639,6 +640,12 @@ impl Struct {
         self
     }
 
+    /// Set the structure attributes.
+    pub fn attr(&mut self, attr: &str) -> &mut Self {
+        self.type_def.attr(attr);
+        self
+    }
+
     /// Add a new type that the struct should derive.
     pub fn derive(&mut self, name: &str) -> &mut Self {
         self.type_def.derive(name);
@@ -1034,6 +1041,7 @@ impl TypeDef {
             docs: None,
             derive: vec![],
             bounds: vec![],
+            attributes: vec![],
         }
     }
 
@@ -1059,12 +1067,22 @@ impl TypeDef {
         self.derive.push(name.to_string());
     }
 
+    fn attr(&mut self, name: &str) {
+        self.attributes.push(name.to_string());
+    }
+
     fn fmt_head(&self, keyword: &str, parents: &[Type], fmt: &mut Formatter) -> fmt::Result {
         if let Some(ref docs) = self.docs {
             docs.fmt(fmt)?;
         }
 
         self.fmt_derive(fmt)?;
+
+        if !self.attributes.is_empty() {
+            for attr in &self.attributes {
+                write!(fmt, "#[{}]\n", attr)?;
+            }
+        }
 
         if let Some(ref vis) = self.vis {
             write!(fmt, "{} ", vis)?;
