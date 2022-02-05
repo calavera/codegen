@@ -125,6 +125,7 @@ struct TypeDef {
     derive: Vec<String>,
     bounds: Vec<Bound>,
     attributes: Vec<String>,
+    serde: Vec<String>,
 }
 
 /// Defines an enum variant.
@@ -159,6 +160,8 @@ pub struct Field {
 
     /// Field annotation
     annotation: Vec<String>,
+
+    serde: Vec<String>,
 }
 
 /// Defines an associated type.
@@ -652,6 +655,12 @@ impl Struct {
         self
     }
 
+    /// Add a new serde attribute to the struct.
+    pub fn serde(&mut self, name: &str) -> &mut Self {
+        self.type_def.serde(name);
+        self
+    }
+
     /// Push a named field to the struct.
     ///
     /// A struct can either set named fields with this function or tuple fields
@@ -869,6 +878,12 @@ impl Enum {
         self
     }
 
+    /// Add a new serde attribute to the struct.
+    pub fn serde(&mut self, name: &str) -> &mut Self {
+        self.type_def.serde(name);
+        self
+    }
+
     /// Push a variant to the enum, returning a mutable reference to it.
     pub fn new_variant(&mut self, name: &str) -> &mut Variant {
         self.push_variant(Variant::new(name));
@@ -1042,6 +1057,7 @@ impl TypeDef {
             derive: vec![],
             bounds: vec![],
             attributes: vec![],
+            serde: vec![],
         }
     }
 
@@ -1067,6 +1083,12 @@ impl TypeDef {
         self.derive.push(name.to_string());
     }
 
+    /// Add a new serde attribute to the typeDef.
+    pub fn serde(&mut self, name: &str) -> &mut Self {
+        self.serde.push(name.to_string());
+        self
+    }
+
     fn attr(&mut self, name: &str) {
         self.attributes.push(name.to_string());
     }
@@ -1077,6 +1099,7 @@ impl TypeDef {
         }
 
         self.fmt_derive(fmt)?;
+        self.fmt_serde(fmt)?;
 
         if !self.attributes.is_empty() {
             for attr in &self.attributes {
@@ -1113,6 +1136,23 @@ impl TypeDef {
             write!(fmt, "#[derive(")?;
 
             for (i, name) in self.derive.iter().enumerate() {
+                if i != 0 {
+                    write!(fmt, ", ")?
+                }
+                write!(fmt, "{}", name)?;
+            }
+
+            write!(fmt, ")]\n")?;
+        }
+
+        Ok(())
+    }
+
+    fn fmt_serde(&self, fmt: &mut Formatter) -> fmt::Result {
+        if !self.serde.is_empty() {
+            write!(fmt, "#[serde(")?;
+
+            for (i, name) in self.serde.iter().enumerate() {
                 if i != 0 {
                     write!(fmt, ", ")?
                 }
@@ -1200,6 +1240,7 @@ impl Field {
             vis: None,
             docs: None,
             annotation: Vec::new(),
+            serde: Vec::new(),
         }
     }
 
@@ -1221,11 +1262,16 @@ impl Field {
         self
     }
 
+    /// Add a new serde attribute to the field.
+    pub fn serde(&mut self, name: &str) -> &mut Self {
+        self.serde.push(name.to_string());
+        self
+    }
+
     /// Get field's annotation.
     pub fn get_annotation(&self) -> Vec<String> {
         self.annotation.clone()
     }
-
 }
 
 // ===== impl Fields =====
@@ -1255,6 +1301,7 @@ impl Fields {
             vis: None,
             docs: None,
             annotation: Vec::new(),
+            serde: Vec::new(),
         })
     }
 
@@ -1285,6 +1332,20 @@ impl Fields {
                         if let Some(ref docs) = f.docs {
                             docs.fmt(fmt)?;
                         }
+
+                        if !f.serde.is_empty() {
+                            write!(fmt, "#[serde(")?;
+
+                            for (i, name) in f.serde.iter().enumerate() {
+                                if i != 0 {
+                                    write!(fmt, ", ")?
+                                }
+                                write!(fmt, "{}", name)?;
+                            }
+
+                            write!(fmt, ")]\n")?;
+                        }
+
                         if !f.annotation.is_empty() {
                             for ann in &f.annotation {
                                 write!(fmt, "{}\n", ann)?;
@@ -1377,6 +1438,7 @@ impl Impl {
             vis: None,
             docs: None,
             annotation: Vec::new(),
+            serde: Vec::new(),
         });
 
         self
@@ -1538,6 +1600,7 @@ impl Function {
             // Simply use empty strings.
             docs: None,
             annotation: Vec::new(),
+            serde: Vec::new(),
         });
 
         self
@@ -1745,7 +1808,6 @@ impl Docs {
                 write!(fmt, "///\n")?;
             } else {
                 write!(fmt, "/// {}\n", line)?;
-
             }
         }
 
