@@ -139,6 +139,7 @@ pub struct Variant {
 #[derive(Debug, Clone)]
 enum Fields {
     Empty,
+    Zero,
     Tuple(Vec<Type>),
     Named(Vec<Field>),
 }
@@ -608,6 +609,14 @@ impl Struct {
         Struct {
             type_def: TypeDef::new(name),
             fields: Fields::Empty,
+        }
+    }
+
+    /// Return a structure with zero fields
+    pub fn zero(name: &str) -> Self {
+        Struct {
+            type_def: TypeDef::new(name),
+            fields: Fields::Zero,
         }
     }
 
@@ -1377,6 +1386,7 @@ impl Fields {
                 write!(fmt, ")")?;
             }
             Fields::Empty => {}
+            Fields::Zero => write!(fmt, "{{}}")?,
         }
 
         Ok(())
